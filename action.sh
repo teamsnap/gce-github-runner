@@ -298,6 +298,11 @@ function start_vm {
 
   safety_off
   launched_instances=$(gcloud compute instances list --filter "labels.vm_id=${VM_ID}" --format='get(name)')
+  if [ -z "$launched_instances" ]; then
+    echo "Failed to launch VMs"
+    exit 1
+  fi
+
   for instance in $launched_instances; do
     while (( i++ < 60 )); do
       GH_READY=$(gcloud compute instances describe ${instance} --zone=${machine_zone} --format='json(labels)' | jq -r .labels.gh_ready)
