@@ -294,15 +294,15 @@ function start_vm {
     --labels=gh_ready=0,vm_id=${VM_ID} \
     --metadata=startup-script="$startup_script"
 
-  if [ $? -ne 0 ]; then
-    echo "Error: Failed to create VM(s)"
-    exit 1
-  fi
-
   echo "label=${VM_ID}" >> $GITHUB_OUTPUT
 
   safety_off
   launched_instances=$(gcloud compute instances list --filter "labels.vm_id=${VM_ID}" --format='get(name)')
+  if [ ${#launched_instances[@]} -eq 0 ]; then
+    echo "Error: Failed to create VM(s)"
+    exit 1
+  fi
+
   for instance in $launched_instances; do
     while (( i++ < 60 )); do
       GH_READY=$(gcloud compute instances describe ${instance} --zone=${machine_zone} --format='json(labels)' | jq -r .labels.gh_ready)
