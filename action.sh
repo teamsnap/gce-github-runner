@@ -203,6 +203,8 @@ function start_vm {
 	cat <<-EOF > /etc/systemd/system/shutdown.sh
 	#!/bin/sh
 	sleep ${shutdown_timeout}
+	# ensure the active gcloud account in the shutdown script is the same one configured on instance creation
+	gcloud config set account \$(gcloud auth list --filter=status:ACTIVE --format=\"value(account)\")
 	instance=\$(hostname)
 	gcloud compute instances delete \\\${instance} --zone=$machine_zone --quiet
 	EOF
