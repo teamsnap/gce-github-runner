@@ -249,9 +249,10 @@ function start_vm {
     $startup_script"
   else
     if [[ "$runner_ver" = "latest" ]]; then
-      latest_ver=$(curl -sL -H "Authorization: Bearer ${token}" \
-             https://api.github.com/repos/actions/runner/releases/latest | \
-             jq -r '.tag_name' | sed -e 's/^v//')
+      latest_ver=$(curl -sL --fail -H "Authorization: Bearer ${token}" \
+                  https://api.github.com/repos/actions/runner/releases/latest | \
+                  jq -r '.tag_name' | sed -e 's/^v//') || {
+        echo "❌ Failed to fetch latest runner version"; exit 1; }
       runner_ver="$latest_ver"
       echo "✅ runner_ver=latest is specified. v$latest_ver is detected as the latest version."
     fi
