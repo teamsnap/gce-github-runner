@@ -42,6 +42,7 @@ arm=
 accelerator=
 num_instances=
 labels=
+max_run_duration=
 
 OPTLIND=1
 while getopts_long :h opt \
@@ -59,6 +60,7 @@ while getopts_long :h opt \
   image optional_argument \
   image_family optional_argument \
   labels optional_argument \
+  max_run_duration optional_argument \
   network optional_argument \
   scopes required_argument \
   shutdown_timeout required_argument \
@@ -115,6 +117,9 @@ do
       ;;
     labels)
       labels=$OPTLARG
+      ;;
+    max_run_duration)
+      max_run_duration=$OPTLARG
       ;;
     network)
       network=${OPTLARG-$network}
@@ -200,6 +205,7 @@ function start_vm {
   accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
   maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
   labels_flag=$([[ ! -z "${labels}" ]] && echo "--labels=gh_ready=0,vm_id=${VM_ID},${labels}" || echo "--labels=gh_ready=0,vm_id=${VM_ID}")
+  max_run_duration_flag=$([[ -z "${max_run_duration}" ]] || echo "--max-run-duration=${max_run_duration}")
 
   echo "The new GCE VM will be ${VM_ID}"
 
@@ -302,6 +308,7 @@ function start_vm {
     ${accelerator} \
     ${maintenance_policy_flag} \
     ${labels_flag} \
+    ${max_run_duration_flag} \
     --metadata=startup-script="$startup_script"
  
   echo "label=${VM_ID}" >> $GITHUB_OUTPUT

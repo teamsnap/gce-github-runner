@@ -106,6 +106,9 @@ inputs:
   labels:
     description: "A comma delimited string of key=value pairs to be set as labels on the instances being created."
     required: false
+  max_run_duration:
+    description: "The maximum run duration for the instances being created. See https://docs.cloud.google.com/sdk/gcloud/reference/compute/instances/bulk/create#--max-run-duration"
+    required: false
 outputs:
   label:
     description: >-
@@ -144,4 +147,5 @@ runs:
         --arm=${{ inputs.arm }}
         --num_instances=${{ inputs.num_instances }}
         --labels=${{ inputs.labels }}
+        --max_run_duration=${{ inputs.max_run_duration }}
       shell: bash
