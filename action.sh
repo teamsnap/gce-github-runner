@@ -205,7 +205,7 @@ function start_vm {
   accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
   maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
   labels_flag=$([[ ! -z "${labels}" ]] && echo "--labels=gh_ready=0,vm_id=${VM_ID},${labels}" || echo "--labels=gh_ready=0,vm_id=${VM_ID}")
-  max_run_duration_flag=$([[ -z "${max_run_duration}" ]] || echo "--max-run-duration=${max_run_duration}")
+  max_run_duration_flag=$([[ -z "${max_run_duration}" ]] || echo "--max-run-duration=${max_run_duration} --instance-termination-action=DELETE")
 
   echo "The new GCE VM will be ${VM_ID}"
 
