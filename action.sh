@@ -41,6 +41,7 @@ maintenance_policy_terminate=
 arm=
 accelerator=
 num_instances=
+labels=
 
 OPTLIND=1
 while getopts_long :h opt \
@@ -57,6 +58,7 @@ while getopts_long :h opt \
   image_project optional_argument \
   image optional_argument \
   image_family optional_argument \
+  labels optional_argument \
   network optional_argument \
   scopes required_argument \
   shutdown_timeout required_argument \
@@ -110,6 +112,9 @@ do
       ;;
     image_family)
       image_family=${OPTLARG-$image_family}
+      ;;
+    labels)
+      labels=$OPTLARG
       ;;
     network)
       network=${OPTLARG-$network}
@@ -194,7 +199,7 @@ function start_vm {
   subnet_flag=$([[ ! -z "${subnet}"  ]] && echo "--subnet=${subnet}" || echo "")
   accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
   maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
-
+  labels_flag=$([[ ! -z "${labels}" ]] && echo "--labels=gh_ready=0,vm_id=${VM_ID},${labels}" || echo "--labels=gh_ready=0,vm_id=${VM_ID}")
 
   echo "The new GCE VM will be ${VM_ID}"
 
@@ -296,7 +301,7 @@ function start_vm {
     ${subnet_flag} \
     ${accelerator} \
     ${maintenance_policy_flag} \
-    --labels=gh_ready=0,vm_id=${VM_ID} \
+    ${labels_flag} \
     --metadata=startup-script="$startup_script"
  
   echo "label=${VM_ID}" >> $GITHUB_OUTPUT

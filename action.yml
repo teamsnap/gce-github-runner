@@ -103,6 +103,9 @@ inputs:
     description: "The number of instances to create"
     default: 1
     required: true
+  labels:
+    description: "A comma delimited string of key=value pairs to be set as labels on the instances being created."
+    required: false
 outputs:
   label:
     description: >-
@@ -140,4 +143,5 @@ runs:
         --maintenance_policy_terminate=${{ inputs.maintenance_policy_terminate }}
         --arm=${{ inputs.arm }}
         --num_instances=${{ inputs.num_instances }}
+        --labels=${{ inputs.labels }}
       shell: bash
