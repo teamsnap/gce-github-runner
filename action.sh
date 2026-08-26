@@ -311,8 +311,6 @@ function start_vm {
     ${max_run_duration_flag} \
     --metadata=startup-script="$startup_script"
  
-  echo "label=${VM_ID}" >> $GITHUB_OUTPUT
-
   safety_off
   launched_instances=$(gcloud compute instances list --filter "labels.vm_id=${VM_ID}" --format='get(name)')
   if [ -z "$launched_instances" ]; then
@@ -321,6 +319,7 @@ function start_vm {
   fi
 
   for instance in $launched_instances; do
+    i=0
     while (( i++ < 60 )); do
       GH_READY=$(gcloud compute instances describe ${instance} --zone=${machine_zone} --format='json(labels)' | jq -r .labels.gh_ready)
       if [[ $GH_READY == 1 ]]; then
@@ -347,6 +346,43 @@ function start_vm {
       exit 1
     fi
   done
+
+  # Verify runners are actually registered with GitHub's API.
+  # The GCE metadata check above only confirms the startup script completed,
+  # but ./svc.sh start launches the runner as a background service — it may
+  # not have connected to GitHub yet. Without this check, downstream jobs
+  # can queue for 24 hours waiting for runners that never registered.
+  echo "Verifying runners registered with GitHub API..."
+  EXPECTED_RUNNERS=${num_instances}
+  REGISTERED=0
+  VERIFY_ATTEMPTS=0
+  MAX_VERIFY_ATTEMPTS=36  # 36 * 5s = 3 minutes
+
+  while (( VERIFY_ATTEMPTS++ < MAX_VERIFY_ATTEMPTS )); do
+    REGISTERED=$(curl -s -H "authorization: Bearer ${token}" \
+      "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runners" | \
+      jq "[.runners[] | select(.labels[].name == \"${VM_ID}\")] | length")
+
+    if (( REGISTERED >= EXPECTED_RUNNERS )); then
+      echo "✅ All ${EXPECTED_RUNNERS} runners registered with GitHub"
+      break
+    fi
+
+    echo "⏳ ${REGISTERED}/${EXPECTED_RUNNERS} runners registered with GitHub, waiting 5 secs ..."
+    sleep 5
+  done
+
+  if (( REGISTERED < EXPECTED_RUNNERS )); then
+    echo "❌ Only ${REGISTERED}/${EXPECTED_RUNNERS} runners registered with GitHub after 3 minutes"
+    echo "Cleaning up VMs..."
+    for instance in $launched_instances; do
+      echo "Deleting ${instance} ..."
+      gcloud --quiet compute instances delete ${instance} --zone=${machine_zone}
+    done
+    exit 1
+  fi
+
+  echo "label=${VM_ID}" >> $GITHUB_OUTPUT
 }
 
 safety_on
